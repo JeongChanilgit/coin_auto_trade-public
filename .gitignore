@@ -1,0 +1,35 @@
+# .gitignore
+
+# 가상환경
+venv/
+__pycache__/
+*.pyc
+
+# Django
+*.sqlite3
+db.sqlite3
+*.log
+
+# OS
+.DS_Store
+
+# 환경변수 파일
+.env
+
+# 기타
+*.pyc
+*.pyo
+*.swp
+.idea/
+
+# Local credentials, user databases and generated trading/runtime data
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-*
+dump.rdb
+celerybeat-schedule*
+trades.xlsx
+~$*
+zNex~$*
