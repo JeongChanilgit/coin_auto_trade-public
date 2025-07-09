@@ -9,7 +9,7 @@ import datetime
 app = DjangoDash('watch_list')
 
 
-candle_sizes = ['5m', '15m']
+candle_sizes = ['30m','1h','2h','4h','6h']
 log_types = ['back_testing','real_trading']
 total_win = len(TradeLog.objects.filter(profit_loss = 'win'))
 total_lose = len(TradeLog.objects.filter(profit_loss = 'lose'))

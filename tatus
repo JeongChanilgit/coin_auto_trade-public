@@ -1,0 +1,17 @@
+[33mcommit 3174e40c06066771bcc5970924fd933891140637[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: JeongChanilgit <peterjung71@gmail.com>
+Date:   Mon Jun 2 00:18:14 2025 +0900
+
+    Exclude CSS files from language stats
+
+[33mcommit 4036dd15388818cd1e3a09b5c81ccc4d1bd537ee[m
+Author: JeongChanilgit <peterjung71@gmail.com>
+Date:   Mon Jun 2 00:15:29 2025 +0900
+
+    Update: 예시 파일 추가
+
+[33mcommit b84188fe413515929f58e42f26875c26884539f8[m
+Author: JeongChanilgit <peterjung71@gmail.com>
+Date:   Sun Jun 1 23:44:10 2025 +0900
+
+    Initial commit: upload coin auto trade project

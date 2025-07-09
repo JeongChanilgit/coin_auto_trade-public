@@ -24,7 +24,7 @@ def load_layout():
         dcc.Dropdown(
             id='coin-selector',
             options=[{'label': tag, 'value': tag} for tag in tags],
-            value='LTC',
+            value='BTC',
             clearable=False
         ),
     ], style={'width': '30%', 'display': 'inline-block'}),
@@ -34,7 +34,7 @@ def load_layout():
         dcc.Dropdown(
             id='candle-size-selector',
             options=[{'label': size, 'value': size} for size in candle_sizes],
-            value='15m',
+            value='30m',
             clearable=False
         ),
     ], style={'width': '30%', 'display': 'inline-block', 'marginLeft': '20px'}),

@@ -7,8 +7,15 @@ class Coin(models.Model):
     candle_size = models.CharField(max_length=10) #'15m'
     last_updated = models.DateTimeField(auto_now=True)
 
+class allowed_comb(models.Model):
+    direction = models.CharField(max_length=10) #'BTC'
+    candle_size = models.CharField(max_length=10) #'15m'
+    inefficiency_restrict = models.FloatField() # 0.02
+    orderblock_restrict = models.FloatField() # 0.02
+
 class TradeLog(models.Model):
     coin = models.ForeignKey(Coin, on_delete=models.CASCADE)
+    candle_size = models.CharField(max_length=10)
     direction = models.CharField(max_length=10)  # BUY or SELL
     entry_price = models.FloatField()
     stop_loss = models.FloatField()
@@ -18,6 +25,7 @@ class TradeLog(models.Model):
     closed_at = models.FloatField(null=True, blank=True)
     log_type = models.CharField(max_length=40, default='back_testing')
     profit_loss = models.CharField(max_length=4,null=True, blank=True) #win or lose
+    seed_ratio = models.FloatField()
 
 
 class Candle_stick(models.Model):
@@ -41,3 +49,4 @@ class Entry_point(models.Model):
     entry_price = models.FloatField()
     take_profit = models.FloatField()
     stop_loss = models.FloatField()
+    gap = models.FloatField()

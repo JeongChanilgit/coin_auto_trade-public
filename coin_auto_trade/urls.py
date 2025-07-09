@@ -23,7 +23,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('visualization/', include('visualization.urls')),
+    
     path('dash/', include('django_plotly_dash.urls')),
 ]
 
