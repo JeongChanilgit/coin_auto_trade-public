@@ -207,7 +207,7 @@ def find_allowed_combination():
 
     allowed_comb.objects.all().delete()
     allowed_comb.objects.bulk_create(allowed_combination)
-    
+    #asf
 @shared_task
 def eraser():
     TradeLog.objects.all().delete()
