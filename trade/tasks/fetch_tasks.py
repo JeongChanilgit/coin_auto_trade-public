@@ -152,7 +152,7 @@ def back_testing_and_fetch_entry_point():
 
 @shared_task
 def find_allowed_combination():
-    candle_sizes = ['3m']
+    candle_sizes = ['3m','5m','15m']
     direction = ['BUY', 'SELL']
     inefficiency_restricts = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03]
     orderblock_restricts = [0.003,0.005]
