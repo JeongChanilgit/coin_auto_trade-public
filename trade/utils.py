@@ -335,13 +335,20 @@ def entry_logic_save(coin, trend, candle, orderblocks, earn_rate, past_prices, r
 def entry_logic(orderblock_gap, coin, trend, candle, orderblocks, earn_rate, past_prices, real_trading = False):
     tag, candle_size = coin.tag, coin.candle_size
     if candle_size == '15m':
-        high_scale_candle_size = '1h'
+        high_scale_candle_size = '4h'
     elif candle_size == '5m':
-        high_scale_candle_size = '15m'
+        high_scale_candle_size = '1h'
     elif candle_size =='3m':
         high_scale_candle_size = '15m'
     elif candle_size =='30m':
-        high_scale_candle_size = '2h'
+        high_scale_candle_size = '8h'
+    elif candle_size =='1h':
+        high_scale_candle_size = '12h'
+    elif candle_size =='2h':
+        high_scale_candle_size = '1d'
+    elif candle_size =='4h':
+        high_scale_candle_size = '3d'
+   
 
 
     #상승 추세일 때 
@@ -361,15 +368,16 @@ def entry_logic(orderblock_gap, coin, trend, candle, orderblocks, earn_rate, pas
 
                         #오더블록이 unmitigated 상태일 때
                         if is_unmitigated(past_prices, orderblocks, candle, trend):             
-
+                            # print(tag, high_scale_candle_size)
                             #high_scale_coin = Coin.objects.get(tag = tag, candle_size = high_scale_candle_size)
+                            # print(high_scale_coin)
                             #high_scale_trend, high_scale_ob,past_ob = high_scale_analyze(high_scale_coin, candle.open_time)
                             long = {'signal': 1,'side':'BUY', 'entry': orderblocks.demand['high'], 'stop_loss' : orderblocks.demand['low']}
                             long['take_profit'] = long['entry'] + earn_rate * (long['entry'] - long['stop_loss'])
                             
                             #큰 스케일에서의 오더블록에 안 닿을 때
                             
-                            if 1:#igh_scale_ob.supply['low'] > long['take_profit']:
+                            if 1:#high_scale_trend == trend:
     
                                 return long
 
@@ -391,14 +399,16 @@ def entry_logic(orderblock_gap, coin, trend, candle, orderblocks, earn_rate, pas
 
                             #오더블록이 unmitigated 상태일 때
                             if is_unmitigated(past_prices, orderblocks, candle, trend):
-
+                                
                                 #high_scale_coin = Coin.objects.get(tag = tag, candle_size = high_scale_candle_size)
+                                
+                                # print(high_scale_coin)
                                 #high_scale_trend, high_scale_ob, past_ob  = high_scale_analyze(high_scale_coin, candle.open_time)
                                 short = {'signal': 1,'side':'SELL','entry': orderblocks.supply['low'], 'stop_loss' : orderblocks.supply['high']}
                                 short['take_profit'] = short['entry'] + earn_rate * (short['entry'] - short['stop_loss'])
                                 
                                 #큰 스케일에서의 오더블록에 안 닿을 때
-                                if 1:#high_scale_ob.demand['high'] < short['take_profit']:
+                                if 1:#high_scale_trend == trend:
                                     return short
    
     return {'signal' : 0}
@@ -613,7 +623,7 @@ def get_candle_data(coin, length, start_time = None, extra_candle_size = None):
         return None
     for i in range(len(past_prices)):
         prices = past_prices[i]
-        candle_data = {'open' : float(prices[1]), 'high' : float(prices[2]), 'low' : float(prices[3]), 'close' : float(prices[4]), 'open_time' : float(prices[0])}
+        candle_data = {'open' : float(prices[1]), 'high' : float(prices[2]), 'low' : float(prices[3]), 'close' : float(prices[4]), 'volume' : float(prices[5]), 'open_time' : float(prices[0])}
         past_prices[i] = candle_data
 
     return past_prices
@@ -659,7 +669,7 @@ def write_log(coin,result,log_type):
 
 
 
-def backtesting_and_find_entry(past_prices, coin,allowed_combination, earn_rate):
+def backtesting_and_find_entry(past_prices, coin, allowed_combination, earn_rate):
     #initial_setting----------------------------------------------------------------------------------------------------------
 
     current_orderblock = orderblock(past_prices[0].high,past_prices[0].low,past_prices[0].high,past_prices[0].low)
@@ -970,7 +980,7 @@ def make_entry_point(coin, candle,entry_analysis,allowed_combination):
                 
 
 
-def high_scale_analyze(coin,open_time):
+def high_scale_analyze(coin, open_time):
 
     high_frame_past_prices = Candle_stick.objects.filter(coin=coin).order_by('open_time')
     past_prices = []

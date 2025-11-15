@@ -4,6 +4,11 @@
 venv/
 __pycache__/
 *.pyc
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 88912acdb773d1adbea4060b5f10b144ece05728
 
 # Local credentials, user databases and generated trading/runtime data
 .env
