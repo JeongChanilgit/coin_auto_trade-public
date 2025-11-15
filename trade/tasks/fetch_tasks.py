@@ -13,7 +13,7 @@ def fetch_coin():
                  'ALGO', 'DYDX', 'OM', 'ENS', 'ZEN', 'BANANA', 'GRASS', 'AR', 'THE', 'VIRTUAL', 'PAXG',
                    'KAVA', 'AVAX', 'THETA']
 
-    candle_sizes = ['1h','2h','4h']
+    candle_sizes = ['3m','5m','15m','30m']
     for tag in coin_list:
         for candle_size in candle_sizes:
             a,b=Coin.objects.get_or_create(
@@ -27,9 +27,9 @@ def fix():
                  'IP', 'MLN', 'ONDO', 'FIL', 'OP', 'NIL', 'DOT', 'TAO', 'KAITO', 'ORDI', 'ORCA', 'APT', 
                  'ETC', 'FORM', 'W', 'AI16Z', 'ARB', 'RENDER', 'INJ', 'MKR', 'ATOM', 'EIGEN', 'ADA', 
                  'ALGO', 'DYDX', 'OM', 'ENS', 'ZEN', 'BANANA', 'GRASS', 'AR', 'THE', 'VIRTUAL', 'PAXG',
-                   'KAVA', 'AVAX', 'THETA','PET','NEAR','AXL','MOODENG',"NEIRO",'PET','DOGE','UNI','ENA','HYPE','MASK','PNUT','ANIME']
+                   'KAVA', 'AVAX', 'THETA']
 
-    candle_sizes = ['30m','8h']
+    candle_sizes = ['30m']
     for tag in coin_list:
         for candle_size in candle_sizes:
             a,b=Coin.objects.get_or_create(
@@ -49,7 +49,9 @@ def fetch_candle_data():
             first_open_candle = candle_stick_filter.first()
 
             now_ms = get_server_time()
-            if coin.candle_size == '5m':
+            if coin.candle_size == '3m':
+                minutes = 3
+            elif coin.candle_size == '5m':
                 minutes = 5
             elif coin.candle_size == '15m':
                 minutes = 15
@@ -68,10 +70,14 @@ def fetch_candle_data():
                 minutes = 480
             elif coin.candle_size =='12h':
                 minutes = 720
+            elif coin.candle_size =='1d':
+                minutes = 1440
+            elif coin.candle_size =='3d':
+                minutes = 4320
         
-            if num_candle < 499 or last_open_candle.open_time < now_ms - 2 * 60000 * minutes:
+            if num_candle < 1499 or last_open_candle.open_time < now_ms - 2 * 60000 * minutes:
 
-                past_prices = get_candle_data(coin, 499)
+                past_prices = get_candle_data(coin, 1499)
                 Candle_stick.objects.filter(coin=coin).delete()
                 TradeLog.objects.filter(coin=coin).delete()
                 Order_block.objects.filter(coin=coin).delete()
@@ -83,6 +89,7 @@ def fetch_candle_data():
                             high=candle['high'],
                             low=candle['low'],
                             close=candle['close'],
+                            volume=candle['volume'],
                             open_time=candle['open_time']
                         ))
                 
@@ -100,6 +107,7 @@ def fetch_candle_data():
                         high=past_prices[-1]['high'],
                         low=past_prices[-1]['low'],
                         close=past_prices[-1]['close'],
+                        volume=past_prices[-1]['volume'],
                         open_time=past_prices[-1]['open_time']
                     )
                 
@@ -112,6 +120,7 @@ def fetch_candle_data():
                         high=past_prices[-1]['high'],
                         low=past_prices[-1]['low'],
                         close=past_prices[-1]['close'],
+                        volume=past_prices[-1]['volume'],
                         open_time=past_prices[-1]['open_time']
                     )
 
@@ -129,11 +138,11 @@ def back_testing_and_fetch_entry_point():
         Candle_stick_data[coin.tag+coin.candle_size] = Candle_stick.objects.filter(coin=coin).order_by('open_time')
     
     for allowed_combination in allowed_combinations: # direction, candle_size, inefficiency_restrict, ob_restrict
-            for coin in coins:
+        for coin in coins:
                 if coin.candle_size == allowed_combination.candle_size:
                     try:
                         past_prices = Candle_stick_data[coin.tag+coin.candle_size]
-                        new_entry = backtesting_and_find_entry(past_prices, coin, allowed_combination, 1)
+                        new_entry = backtesting_and_find_entry(past_prices, coin, allowed_combination, 2)
                         if new_entry != None:
                             new_entry_points.append(new_entry)
                         
@@ -148,35 +157,60 @@ def back_testing_and_fetch_entry_point():
             save.append(e_p.entry_price)
     Entry_point.objects.bulk_create(entrys)
 
+def final_return(winrate, earnrate, trades):
+    R_win = 0.01
+    R_loss = -0.011
+    
+    # 1회 기대 수익률
+    E = earnrate * winrate * R_win + (1 - winrate) * R_loss
+
+    # 복리 누적
+    total_factor = (1 + E)**trades
+
+    # 최종 수익률(%)
+    return (total_factor - 1) * 100
+
 @shared_task
 def find_allowed_combination():
-    candle_sizes = ['30m','1h','2h','4h','8h']
+    candle_sizes = ['3m','5m','15m','30m']
     direction = ['BUY', 'SELL']
-    inefficiency_restricts = [0.01,0.015,0.02,0.025,0.03]
-    orderblock_restricts = [0.01,0.015,0.02,0.025,0.03]
-    magic_rate = 0.535#  ***** 0.525 # 이 비율을 넘겨야 수익 가능!
+    inefficiency_restricts = [0.005, 0.007, 0.01, 0.013, 0.016, 0.02]
+    orderblock_restricts = [0.005, 0.007, 0.01, 0.013, 0.016, 0.02]
+    magic_rate = 0.5#  ***** 0.525 # 이 비율을 넘겨야 수익 가능!
     trade_rate_result = []
     Candle_stick_data = {}
+    earn_rate = 2
     tags = Coin.objects.values_list('tag', flat=True).distinct()
-    for coin in Coin.objects.all():
-        Candle_stick_data[coin.tag+coin.candle_size] = Candle_stick.objects.filter(coin=coin).order_by('open_time')
-
+    for candle_size in candle_sizes:
+        for tag in tags:
+            coin = Coin.objects.get(tag=tag, candle_size=candle_size)
+            Candle_stick_data[tag+candle_size] = Candle_stick.objects.filter(coin=coin).order_by('open_time')
+    
     for size in candle_sizes:
-
         for inef_res in inefficiency_restricts:
             for ob_res in orderblock_restricts:
                 buy_win, buy_lose, sell_win, sell_lose = 1, 1, 1, 1
                 for tag in tags:
-                    try:
+                    # try:
                         past_prices = Candle_stick_data[tag+size]
+                        coin = Coin.objects.get(tag=tag, candle_size=size)
+                       
+                        b_w, b_l, s_w, s_l = backtesting_for_allowed_comb(past_prices, coin, earn_rate, inef_res, ob_res)
 
-                        b_w, b_l, s_w, s_l = backtesting_for_allowed_comb(past_prices, coin, 1, inef_res, ob_res)
-                        buy_win += b_w
-                        buy_lose += b_l
-                        sell_win += s_w
-                        sell_lose += s_l
-                    except:
-                        print(tag+size)
+                        
+                        if (b_w+b_l+s_w+s_l) > 1:
+                            buy_win += b_w
+                            buy_lose += b_l
+                            sell_win += s_w
+                            sell_lose += s_l
+                
+                # print(size,'BUY',inef_res,ob_res,buy_win/(buy_win+buy_lose),buy_win+buy_lose)
+                # print(size,'SELL',inef_res,ob_res,sell_win/(sell_win+sell_lose),sell_win+sell_lose)
+                if buy_win+buy_lose+sell_win+sell_lose > 100:
+                    print(size,round(final_return(round((buy_win+sell_win)/(buy_win+buy_lose+sell_win+sell_lose),3),earn_rate,buy_win+buy_lose+sell_win+sell_lose),1))
+                    print(size,round(final_return(round((buy_win)/(buy_win+buy_lose),3),earn_rate,buy_win+buy_lose),1))
+                    print(size,round(final_return(round((sell_win)/(sell_win+sell_lose),3),earn_rate,sell_win+sell_lose),1))
+                    print('')
 
                 trade_rate_result.append([size,'BUY',inef_res,ob_res,buy_win/(buy_win+buy_lose),buy_win+buy_lose])
                 trade_rate_result.append([size,'SELL',inef_res,ob_res,sell_win/(sell_win+sell_lose),sell_win+sell_lose])
@@ -188,7 +222,7 @@ def find_allowed_combination():
 
     temp_rate = 1.0
     for comb in trade_rate_result:
-        if temp_rate > round(comb[4],5) > 0.535:
+        if temp_rate > round(comb[4],5) > magic_rate:
             temp_rate = round(comb[4],5)
            
             if comb[5] >= 15:
@@ -200,7 +234,7 @@ def find_allowed_combination():
                 if flag:
                     #if comb[0]=='2h' and comb[1]=='BUY':
                
-                    allowed_combination.append(allowed_comb(direction = comb[1], candle_size = comb[0], inefficiency_restrict = comb[2], orderblock_restrict = comb[3]))
+                    allowed_combination.append(allowed_comb(direction = comb[1], candle_size = comb[0], inefficiency_restrict = comb[2], orderblock_restrict = comb[3], win_rate = comb[4]))
 
     allowed_comb.objects.all().delete()
     allowed_comb.objects.bulk_create(allowed_combination)

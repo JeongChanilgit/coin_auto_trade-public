@@ -19,8 +19,8 @@ from asgiref.sync import sync_to_async
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "coin_auto_trade.settings")
 django.setup()
 
-API_KEY = os.environ['binance_api_key']
-SECRET_KEY = os.environ['binance_secret_key']
+API_KEY = os.environ['binance_api']
+SECRET_KEY = os.environ['binance_secret']
 keys = API_keys(API_KEY, SECRET_KEY)
 
 triggered_entries = []
